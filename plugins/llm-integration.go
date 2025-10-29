@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"math/rand"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/mariocandela/beelzebub/v3/parser"
 	"github.com/mariocandela/beelzebub/v3/tracer"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/rand"
 )
 
 const (
