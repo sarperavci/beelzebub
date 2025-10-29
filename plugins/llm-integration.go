@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/mariocandela/beelzebub/v3/parser"
 	"github.com/mariocandela/beelzebub/v3/tracer"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"regexp"
-	"strings"
+	"golang.org/x/exp/rand"
 )
 
 const (
@@ -244,6 +247,25 @@ func (llmHoneypot *LLMHoneypot) buildOutputValidationPrompt(command string) ([]M
 	return messages, nil
 }
 
+func (llmHoneypot *LLMHoneypot) selectRandomAPIKey() string {
+	if llmHoneypot.OpenAIKey == "" {
+		return ""
+	}
+
+	keys := strings.Split(llmHoneypot.OpenAIKey, ",")
+	if len(keys) == 1 {
+		return strings.TrimSpace(keys[0])
+	}
+
+	for i, key := range keys {
+		keys[i] = strings.TrimSpace(key)
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomIndex := r.Intn(len(keys))
+	return keys[randomIndex]
+}
+
 func (llmHoneypot *LLMHoneypot) openAICaller(messages []Message) (string, error) {
 	var err error
 
@@ -260,6 +282,8 @@ func (llmHoneypot *LLMHoneypot) openAICaller(messages []Message) (string, error)
 		return "", errors.New("openAIKey is empty")
 	}
 
+	apiKey := llmHoneypot.selectRandomAPIKey()
+
 	if llmHoneypot.Host == "" {
 		llmHoneypot.Host = openAIEndpoint
 	}
@@ -268,7 +292,7 @@ func (llmHoneypot *LLMHoneypot) openAICaller(messages []Message) (string, error)
 	response, err := llmHoneypot.client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(requestJSON).
-		SetAuthToken(llmHoneypot.OpenAIKey).
+		SetAuthToken(apiKey).
 		SetResult(&Response{}).
 		Post(llmHoneypot.Host)
 
