@@ -104,6 +104,12 @@ func (sshStrategy *SSHStrategy) Init(servConf parser.BeelzebubServiceConfigurati
 				})
 
 				terminal := term.NewTerminal(sess, buildPrompt(sess.User(), servConf.ServerName))
+
+				// Display banner message if configured
+				if servConf.Banner != "" {
+					terminal.Write([]byte(servConf.Banner + "\n"))
+				}
+
 				var histories []plugins.Message
 				if sshStrategy.Sessions.HasKey(sessionKey) {
 					histories = sshStrategy.Sessions.Query(sessionKey)
